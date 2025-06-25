@@ -1,3 +1,4 @@
+# .github/workflows/reminder-cron.yml
 name: Reminder Cron
 
 on:
@@ -12,5 +13,6 @@ jobs:
       - name: Trigger Vercel Reminder Function
         run: |
           echo "Calling reminders at $(date -u)"
-          curl -s https://pilo-dent-frontend.vercel.app/api/reminders
-
+          curl -s \
+            -H "x-vercel-protection-bypass: ${{ secrets.VERCEL_BYPASS_SECRET }}" \
+            https://pilo-dent-frontend.vercel.app/api/reminders
