@@ -1,0 +1,15 @@
+{
+  "functions": {
+    "api/reminders.js": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/reminders",
+      "schedule": "0 * * * *"
+    }
+  ]
+}
+
