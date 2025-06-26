@@ -1,5 +1,6 @@
 // src/components/Admin/AdminSettings.tsx
 import { useEffect, useState } from 'react';
+// @ts-ignore: no type declarations for supabaseClient
 import { supabase } from '../../supabaseClient';
 
 export default function AdminSettings() {
@@ -20,7 +21,8 @@ export default function AdminSettings() {
         setError(error.message);
       } else {
         const obj: Record<string, any> = {};
-        data.forEach(({ key, value }) => {
+        data?.forEach((row: { key: string; value: any }) => {
+          const { key, value } = row;
           obj[key] = value;
         });
         setSettings(obj);
@@ -94,4 +96,3 @@ export default function AdminSettings() {
     </div>
   );
 }
-
