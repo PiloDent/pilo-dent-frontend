@@ -1,3 +1,5 @@
+// api/reminders.js
+
 import { createClient } from '@supabase/supabase-js';
 import Twilio from 'twilio';
 import sgMail from '@sendgrid/mail';
@@ -7,19 +9,23 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
 const twilioClient = Twilio(
   process.env.TWILIO_ACCOUNT_SID,
   process.env.TWILIO_AUTH_TOKEN
 );
+
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-// Define reminder windows\const WINDOWS = [
+// Define reminder windows
+const WINDOWS = [
   { type: '24h', start: 24, end: 25 },
   { type: '2h', start: 2, end: 3 },
   { type: 'follow', start: -25, end: -24 }
 ];
 
-// Helper to compute ISO string offset by hoursunction isoOffset(hours) {
+// Helper to compute an ISO timestamp offset by N hours
+function isoOffset(hours) {
   const d = new Date();
   d.setHours(d.getHours() + hours);
   return d.toISOString();
@@ -35,7 +41,7 @@ export default async function handler(req, res) {
 
   for (const w of WINDOWS) {
     const start = isoOffset(w.start);
-    const end = isoOffset(w.end);
+    const end   = isoOffset(w.end);
 
     // Fetch appointments with embedded patient
     const { data: appts, error: fetchErr } = await supabase
@@ -60,13 +66,14 @@ export default async function handler(req, res) {
     }
 
     for (const a of appts || []) {
-      // Deduplication: skip if already sent
+      // Skip if already sent this type
       const { data: logs } = await supabase
         .from('reminder_logs')
         .select('id')
         .eq('appointment_id', a.id)
         .eq('reminder_type', w.type)
         .limit(1);
+
       if (logs?.length) continue;
 
       // Build message
@@ -76,11 +83,11 @@ export default async function handler(req, res) {
         timeStyle: 'short'
       });
       const isFollow = w.type === 'follow';
-      const subject = isFollow ? 'Missed Appointment' : 'Appointment Reminder';
-      const text = isFollow
+      const subject  = isFollow ? 'Missed Appointment' : 'Appointment Reminder';
+      const text     = isFollow
         ? `We missed you at your appointment on ${when}. Please reschedule: https://your-crm.example.com`
         : `Reminder: you have an appointment on ${when}.`;
-      const html = `<p>${text}</p>`;
+      const html     = `<p>${text}</p>`;
 
       try {
         // Send SMS
@@ -91,6 +98,7 @@ export default async function handler(req, res) {
             body: text
           });
         }
+
         // Send Email
         if (a.patient.email) {
           await sgMail.send({
@@ -102,7 +110,7 @@ export default async function handler(req, res) {
           });
         }
 
-        // Log reminder
+        // Log it
         await supabase.from('reminder_logs').insert({
           appointment_id: a.id,
           reminder_type: w.type,
