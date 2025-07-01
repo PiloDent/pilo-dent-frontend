@@ -1,19 +1,18 @@
-// vite.config.js
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { fileURLToPath, URL } from "node:url";
 
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      // @ maps to <project-root>/src
-      '@': path.resolve(__dirname, 'src'),
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
-    extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx'],
   },
   server: {
-    proxy: { /* … */ },
+    // whatever port/open settings you like
+    port: 3000,
+    open: true,
   },
 });
 
